@@ -98,16 +98,16 @@ impl PostProcessRule for BlankLineBetweenDeclGroupsRule {
                     // - binding → import/export
                     // But NOT between consecutive imports or consecutive exports.
                     if let (Some(pt), Some(ct)) = (prev_type, curr_type) {
-                        let needs_blank = match (pt, ct) {
-                            (DeclType::Import, DeclType::Import) => false,
-                            (DeclType::Export, DeclType::Export) => false,
-                            (DeclType::Import, DeclType::Export)
-                            | (DeclType::Export, DeclType::Import) => false,
-                            (DeclType::Comment, _) | (_, DeclType::Comment) => false,
-                            _ => true,
-                        };
-                        if needs_blank && with_blanks.last().map_or(true, |l| !l.trim().is_empty())
-                        {
+                        let needs_blank = !matches!(
+                            (pt, ct),
+                            (DeclType::Import, DeclType::Import)
+                                | (DeclType::Export, DeclType::Export)
+                                | (DeclType::Import, DeclType::Export)
+                                | (DeclType::Export, DeclType::Import)
+                                | (DeclType::Comment, _)
+                                | (_, DeclType::Comment)
+                        );
+                        if needs_blank && with_blanks.last().is_none_or(|l| !l.trim().is_empty()) {
                             with_blanks.push(String::new());
                         }
                     }
@@ -331,7 +331,7 @@ fn find_type_param_close(chars: &[char], from: usize) -> Option<usize> {
         if chars[i] == ' ' && chars[i + 1] == '>' {
             // Ensure the `>` is not part of a `>>=` / `>>` / `>=` operator.
             let after: Option<char> = chars.get(i + 2).copied();
-            if after.map_or(true, |c| !is_word_char(c)) {
+            if after.is_none_or(|c| !is_word_char(c)) {
                 // Validate the content before this ` >`. Parens must balance
                 // so `(A > B)` inside the list can't close the bracket early.
                 let content: String = chars[from..i].iter().collect();
@@ -406,11 +406,11 @@ impl PostProcessRule for IndentContinuationBindingsRule {
                 if curr <= prev {
                     let shift = prev + 2 - curr;
                     let end = continuation_block_end(&lines, i);
-                    for k in i..=end {
-                        if lines[k].trim().is_empty() {
+                    for line in &lines[i..=end] {
+                        if line.trim().is_empty() {
                             out.push(String::new());
                         } else {
-                            out.push(format!("{}{}", " ".repeat(shift), lines[k]));
+                            out.push(format!("{}{}", " ".repeat(shift), line));
                         }
                     }
                     i = end + 1;

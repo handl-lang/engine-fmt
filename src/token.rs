@@ -74,8 +74,8 @@ impl TokenFormatter {
             // is a prefix operator when the preceding token is not a value or
             // closing bracket (i.e. it cannot be the right operand of a binary
             // minus).
-            if token.text == "-" {
-                if !matches!(
+            if token.text == "-"
+                && !matches!(
                     prev_cat,
                     Some(
                         TokenCat::Atom
@@ -83,9 +83,9 @@ impl TokenFormatter {
                             | TokenCat::CloseBracket
                             | TokenCat::CloseBrace
                     )
-                ) {
-                    cat = TokenCat::Other;
-                }
+                )
+            {
+                cat = TokenCat::Other;
             }
 
             if cat == TokenCat::Comment {
@@ -106,10 +106,10 @@ impl TokenFormatter {
 
             if i == 0 || has_newline || at_line_start {
                 out.push_str(gap);
-            } else if let Some(prev) = prev_cat {
-                if self.rule.needs_space(prev, cat) {
-                    out.push(' ');
-                }
+            } else if let Some(prev) = prev_cat
+                && self.rule.needs_space(prev, cat)
+            {
+                out.push(' ');
             }
 
             out.push_str(&token.text);

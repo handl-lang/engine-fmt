@@ -234,13 +234,12 @@ impl<'a> PreserveEmitter<'a> {
 impl<'a> NodeEmitter for PreserveEmitter<'a> {
     fn emit(&self, ctx: &FormatCtx, r: AstRef, indent: usize) -> Result<String, LangError> {
         let node = ctx.ast.at(r)?;
-        if let Some(span) = node.span {
-            if r.index() < self.changed.len()
-                && !self.changed[r.index()]
-                && span.end <= self.src.len()
-            {
-                return Ok(self.src[span.start..span.end].to_string());
-            }
+        if let Some(span) = node.span
+            && r.index() < self.changed.len()
+            && !self.changed[r.index()]
+            && span.end <= self.src.len()
+        {
+            return Ok(self.src[span.start..span.end].to_string());
         }
         ctx.format_node_internal(r, indent)
     }
@@ -706,10 +705,10 @@ fn children_refs(node: &AstNode) -> Vec<AstRef> {
 /// payloads are not scalar (objects carry `children`/structured data; null
 /// means no payload).
 fn has_scalar_payload(node: &AstNode) -> bool {
-    match &node.payload {
-        Value::String(_) | Value::Number(_) | Value::Bool(_) => true,
-        _ => false,
-    }
+    matches!(
+        &node.payload,
+        Value::String(_) | Value::Number(_) | Value::Bool(_)
+    )
 }
 
 /// Convert a JSON [`Value`] to surface text.
