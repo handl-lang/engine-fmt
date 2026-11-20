@@ -1,7 +1,12 @@
 # engine-fmt
 
 Data-driven AST formatter: renders an `Ast` back to surface syntax using only
-language data (`grammar` rows, `tokens`, `ast` shapes) — no hardcoded kind strings.
+language data (`grammar` rows, `tokens`, `ast` shapes) — no hardcoded kind
+strings.
+
+An `engine-*` crate: a **tool** engine in the family (not one of the five
+operation slots). See also `PreserveEmitter`, which splices untouched subtrees
+from the original source to keep comments and layout.
 
 ```rust
 use handl_language::Language;
@@ -12,24 +17,20 @@ let engine = FormatEngine::new(FormatOptions::default());
 let out = engine.format(&lang, &ast, root)?;   // `ast`/`root` from your parser
 ```
 
-Part of the `engine-*` family (`docs/engines`): a **tool**, not one of the five
-operation slots. See also `PreserveEmitter`, which splices untouched subtrees
-from the original source to keep comments and layout.
-
-## Docs
-
-- [Reference](https://handl-lang.github.io/docs/engine-fmt/reference/) — public API
-- [How-to](https://handl-lang.github.io/docs/engine-fmt/how-to/) — task recipes
-- [Explanation](https://handl-lang.github.io/docs/engine-fmt/explanation/) — design
-
 ## Development
 
 ```bash
-cargo test     # deps resolve from git; no sibling checkouts needed
+cargo xtask gate        # fmt --check → clippy -D warnings → test → doc
 ```
 
-`ci.sh` is the gate: `fmt --check` → `clippy -D warnings` → `test` → `doc -D warnings`.
+`cargo xtask` wraps the repo's `xtask/` crate (`fmt`, `clippy`, `test`, `doc`,
+`check`, `gate`); `ci.sh` is the gate entry. Deps resolve from git, so no
+sibling checkouts are needed; a plain clone test-runs as-is.
 
 ## License
 
 MIT.
+
+## Documentation
+
+<https://handl-lang.github.io/docs/engine-fmt/>
