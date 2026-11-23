@@ -9,12 +9,18 @@
 //! `format_source_with_language` drives, so expected strings are the
 //! canonical v0.1 layout applied to mini-surface syntax.
 
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use handl_language::{Language, LexerPattern, LexerRuleDef, LiteralKind, TokenKindDef};
-use hnl_engine_codegen::{ArtifactRef, Change, EmitContext, Emitter, IrModule};
+use handl_plugin_codegen::CodegenRequest;
+use hnl_engine_codegen::{
+    ArtifactRef, ArtifactStore, Change, EmitContext, Emitter, Engine, IrModule, MemoryStore,
+    PlanAction, Source,
+};
 use hnl_engine_fmt::{
-    FMT_IR_KIND, FmtEmitter, FmtModule, FormatOptions, TokenFormatter, canonical_post_process,
+    FMT_EMITTER_NAME, FMT_IR_KIND, FMT_SOURCE_NAME, FmtEmitter, FmtModule, FmtSource,
+    FormatOptions, TokenFormatter, canonical_post_process, register,
 };
 use hnl_engine_lex_pattern::lex;
 
@@ -380,4 +386,185 @@ fn materialize_is_idempotent_at_change_level() {
     assert_eq!(once_text, twice_text);
     // And it equals the independently-spelled surface pipeline.
     assert_eq!(once_text, surface_format(&once_text));
+}
+
+// ---------------------------------------------------------------------------
+// FmtSource + register (PL-004 T-090): spec → IR → Change → plan
+// ---------------------------------------------------------------------------
+
+fn write_spec(dir: &std::path::Path, rel: &str, src: &str) -> PathBuf {
+    let path = dir.join(rel);
+    std::fs::create_dir_all(path.parent().expect("spec has a parent")).unwrap();
+    std::fs::write(&path, src).expect("write spec");
+    path
+}
+
+fn ctx_for(spec: &std::path::Path, output: &std::path::Path) -> EmitContext {
+    EmitContext::new()
+        .with_spec_path(spec)
+        .with_output_dir(output)
+}
+
+#[test]
+fn fmt_source_parse_reads_lexes_and_names_artifact() {
+    let dir = tempfile::tempdir().unwrap();
+    let spec = write_spec(dir.path(), "main.hnl", "x  ::  1\n");
+
+    let source = FmtSource::new(lang().clone());
+    let ir = source
+        .parse(&ctx_for(&spec, dir.path()))
+        .expect("parse lifts file → FmtModule");
+
+    assert_eq!(ir.kind().as_str(), FMT_IR_KIND);
+    assert_eq!(ir.artifact, ArtifactRef::new("main.hnl"));
+    assert_eq!(ir.source, "x  ::  1\n");
+    // The lifted module materializes through the same emitter.
+    assert_eq!(materialized_text(&ir), "x :: 1\n");
+}
+
+#[test]
+fn fmt_source_artifact_keeps_path_under_store_root() {
+    let dir = tempfile::tempdir().unwrap();
+    let spec = write_spec(dir.path(), "src/nested/a.hnl", "y::2\n");
+
+    let source = FmtSource::new(lang().clone());
+    let ir = source.parse(&ctx_for(&spec, dir.path())).expect("parse");
+    assert_eq!(ir.artifact, ArtifactRef::new("src/nested/a.hnl"));
+}
+
+#[test]
+fn fmt_source_output_root_itself_is_stripped() {
+    // `--output src` with spec `src/a.hnl` → artifact `a.hnl`.
+    let dir = tempfile::tempdir().unwrap();
+    let src_dir = dir.path().join("src");
+    let spec = write_spec(&src_dir, "a.hnl", "y::2\n");
+
+    let source = FmtSource::new(lang().clone());
+    let ir = source.parse(&ctx_for(&spec, &src_dir)).expect("parse");
+    assert_eq!(ir.artifact, ArtifactRef::new("a.hnl"));
+}
+
+#[test]
+fn fmt_source_requires_spec_path() {
+    let source = FmtSource::new(lang().clone());
+    let err = source.parse(&EmitContext::new()).unwrap_err();
+    assert!(matches!(err, hnl_engine_codegen::CodegenError::Parse(_)));
+}
+
+#[test]
+fn fmt_source_missing_file_is_parse_error() {
+    let dir = tempfile::tempdir().unwrap();
+    let spec = dir.path().join("nope.hnl");
+    let source = FmtSource::new(lang().clone());
+    let err = source.parse(&ctx_for(&spec, dir.path())).unwrap_err();
+    assert!(matches!(err, hnl_engine_codegen::CodegenError::Parse(_)));
+}
+
+#[test]
+fn fmt_source_unlexable_source_is_parse_error() {
+    let dir = tempfile::tempdir().unwrap();
+    // `@` matches no lexer rule in the mini language.
+    let spec = write_spec(dir.path(), "bad.hnl", "x @ 1\n");
+    let source = FmtSource::new(lang().clone());
+    let err = source.parse(&ctx_for(&spec, dir.path())).unwrap_err();
+    assert!(matches!(err, hnl_engine_codegen::CodegenError::Parse(_)));
+}
+
+#[test]
+fn fmt_source_absolute_spec_outside_store_root_is_parse_error() {
+    let dir = tempfile::tempdir().unwrap();
+    let other = tempfile::tempdir().unwrap();
+    let spec = write_spec(other.path(), "a.hnl", "x::1\n");
+
+    let source = FmtSource::new(lang().clone());
+    let err = source.parse(&ctx_for(&spec, dir.path())).unwrap_err();
+    match err {
+        hnl_engine_codegen::CodegenError::Parse(msg) => {
+            assert!(msg.contains("not under the store root"), "{msg}");
+        }
+        other_err => panic!("expected Parse error, got {other_err}"),
+    }
+}
+
+#[test]
+fn register_seats_fmt_source_emitter_and_target() {
+    let mut reg = handl_plugin_codegen::CodegenRegistry::new();
+    register(&mut reg);
+    assert!(reg.contains("fmt"));
+    assert!(reg.target_names().contains(&"fmt"));
+    assert_eq!(FMT_SOURCE_NAME, "fmt");
+    assert_eq!(FMT_EMITTER_NAME, "fmt");
+}
+
+#[test]
+fn registry_materialize_runs_the_full_pipeline() {
+    let dir = tempfile::tempdir().unwrap();
+    let spec = write_spec(dir.path(), "main.hnl", "x  ::  1\n");
+
+    let mut reg = handl_plugin_codegen::CodegenRegistry::new();
+    register(&mut reg);
+    let language: &Language = lang();
+    let req = CodegenRequest {
+        spec: &spec,
+        source_url: None,
+        output: dir.path(),
+        target: None,
+        include: None,
+        exclude: None,
+        config: None,
+        emit_spec: None,
+        lang: language,
+        cache_dir: None,
+    };
+
+    let changes = reg.materialize("fmt", &req).expect("materialize");
+    assert_eq!(changes.len(), 1);
+    let Change::Put {
+        artifact, content, ..
+    } = &changes[0]
+    else {
+        panic!("fmt target must emit a Put");
+    };
+    assert_eq!(artifact, &ArtifactRef::new("main.hnl"));
+    assert_eq!(content, b"x :: 1\n");
+}
+
+#[test]
+fn plan_is_the_check_semantics() {
+    // `fmt --check` = desired-vs-store diff: a store already holding the
+    // canonical bytes plans clean; the raw bytes plan one Update.
+    let dir = tempfile::tempdir().unwrap();
+    let spec = write_spec(dir.path(), "main.hnl", "x  ::  1\n");
+
+    let mut reg = handl_plugin_codegen::CodegenRegistry::new();
+    register(&mut reg);
+    let language: &Language = lang();
+    let req = CodegenRequest {
+        spec: &spec,
+        source_url: None,
+        output: dir.path(),
+        target: None,
+        include: None,
+        exclude: None,
+        config: None,
+        emit_spec: None,
+        lang: language,
+        cache_dir: None,
+    };
+    let changes = reg.materialize("fmt", &req).expect("materialize");
+
+    let store = MemoryStore::new();
+    let engine = Engine::new(&store);
+    let artifact = ArtifactRef::new("main.hnl");
+
+    store.write(&artifact, b"x :: 1\n").expect("seed canonical");
+    let plan = engine.plan(&changes, None).expect("plan");
+    assert!(plan.is_clean(), "canonical store content must plan clean");
+    assert_eq!(plan.count(PlanAction::Unchanged), 1);
+
+    store.write(&artifact, b"x  ::  1\n").expect("seed raw");
+    let plan = engine.plan(&changes, None).expect("plan");
+    assert!(!plan.is_clean(), "raw store content must plan a mutation");
+    assert_eq!(plan.count(PlanAction::Update), 1);
+    assert_eq!(plan.mutations().count(), 1);
 }

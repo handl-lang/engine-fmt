@@ -16,10 +16,35 @@ publish = false
 [dependencies]
 handl-language = { git = "https://github.com/handl-lang/kernel", branch = "main" }
 hnl-engine-codegen = { path = "../engine-codegen" }
+# PL-004 T-090: the registry-facing `register()` surface types live in
+# `handl-plugin-codegen` (the codegen port, host repo — same convention
+# as the `engine-codegen-*` backend crates; the `[patch]` below resolves
+# it from the sibling `../host` checkout).
+handl-plugin-codegen = { git = "https://github.com/handl-lang/host", branch = "main" }
+# Stage-1 lex for `FmtSource::parse` — the same data-driven lexer
+# `plugin-ext-fmt` and the `fmt` target share (ADR-0095: lex is reused
+# by the surface, never duplicated). Render (`FmtModule::formatted` /
+# `FmtEmitter`) stays lex-free.
+hnl-engine-lex-pattern = { git = "https://github.com/handl-lang/engine-lex-pattern", branch = "main" }
 serde_json = "1"
 
 [dev-dependencies]
 serde_json = "1"
-# Integration tests lex real source through the data-driven lexer (the
-# library itself stays lex-free — see `src/codegen.rs` module docs).
+tempfile = "3"
+
+# Local sibling resolution for the git deps above — mirrors the
+# `engine-codegen-*` backend crates' patch blocks.
+[patch."https://github.com/handl-lang/engine"]
+hnl-engine = { path = "../engine" }
+
+[patch."https://github.com/handl-lang/host"]
+handl-plugin-codegen = { path = "../host/crates/plugin-codegen" }
+
+[patch."https://github.com/handl-lang/kernel"]
+handl-calculus = { path = "../kernel/crates/handl-calculus" }
+handl-language = { path = "../kernel/crates/handl-language" }
+handl-value = { path = "../kernel/crates/handl-value" }
+handl-plugin-module = { path = "../host/crates/plugin-module" }
+
+[patch."https://github.com/handl-lang/engine-lex-pattern"]
 hnl-engine-lex-pattern = { path = "../engine-lex-pattern" }
