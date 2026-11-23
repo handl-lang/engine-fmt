@@ -15,7 +15,7 @@ publish = false
 
 [dependencies]
 handl-language = { git = "https://github.com/handl-lang/kernel", branch = "main" }
-hnl-engine-codegen = { path = "../engine-codegen" }
+hnl-engine-codegen = { git = "https://github.com/handl-lang/engine-codegen", branch = "main" }
 # PL-004 T-090: the registry-facing `register()` surface types live in
 # `handl-plugin-codegen` (the codegen port, host repo — same convention
 # as the `engine-codegen-*` backend crates; the `[patch]` below resolves
@@ -34,6 +34,9 @@ tempfile = "3"
 
 # Local sibling resolution for the git deps above — mirrors the
 # `engine-codegen-*` backend crates' patch blocks.
+[patch."https://github.com/handl-lang/engine-codegen"]
+hnl-engine-codegen = { path = "../engine-codegen" }
+
 [patch."https://github.com/handl-lang/engine"]
 hnl-engine = { path = "../engine" }
 
