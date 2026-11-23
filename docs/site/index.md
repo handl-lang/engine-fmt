@@ -4,7 +4,7 @@ A data-driven AST formatter: renders an `Ast` back to surface syntax from `gramm
 
 ## What it is
 
-A **tool** in the `engine-*` family. Formatting is projection, not semantics: every kind-to-syntax mapping already exists in the language data, so the formatter only chooses a rendering strategy (infix / prefix / delimited) plus a layout.
+A **tool** in the `tool-*` family. Formatting is projection, not semantics: every kind-to-syntax mapping already exists in the language data, so the formatter only chooses a rendering strategy (infix / prefix / delimited) plus a layout.
 
 ## Start here
 

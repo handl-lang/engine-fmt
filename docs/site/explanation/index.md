@@ -6,7 +6,7 @@ Formatting is projection, not semantics: every kind-to-syntax mapping already ex
 
 ## Where it sits
 
-This crate belongs to the `engine-*` family. Plugins, kits and hosts reach it
+This crate belongs to the `tool-*` family. Plugins, kits and hosts reach it
 through the kit's slot, so it can be swapped without touching a language
 definition.
 

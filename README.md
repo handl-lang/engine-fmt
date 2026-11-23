@@ -4,7 +4,7 @@ Data-driven AST formatter: renders an `Ast` back to surface syntax using only
 language data (`grammar` rows, `tokens`, `ast` shapes) — no hardcoded kind
 strings.
 
-An `engine-*` crate: a **tool** engine in the family (not one of the five
+A `tool-*` crate: a **tool** engine in the family (not one of the five
 operation slots). See also `PreserveEmitter`, which splices untouched subtrees
 from the original source to keep comments and layout.
 
