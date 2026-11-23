@@ -28,10 +28,12 @@ use serde_json::Value;
 //   stage 4 · post-process // [`post_process`] — [`PostProcessRule`] seam
 // ---------------------------------------------------------------------------
 
+pub mod codegen;
 pub mod layout;
 pub mod post_process;
 pub mod token;
 
+pub use codegen::*;
 pub use layout::*;
 pub use post_process::*;
 pub use token::*;
