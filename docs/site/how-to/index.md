@@ -1,6 +1,6 @@
 # How-to guides
 
-Task recipes for `engine-fmt`.
+Task recipes for `tool-fmt`.
 
 ## Run the gate
 
@@ -12,8 +12,8 @@ Task recipes for `engine-fmt`.
 ## Use it from Rust
 
 ```bash
-cargo add --git https://github.com/handl-lang/engine-fmt --branch main
+cargo add --git https://github.com/handl-lang/tool-fmt --branch main
 ```
 
-See the [reference](/engine-fmt/reference/) for the types involved and the
-[explanation](/engine-fmt/explanation/) for why the crate is shaped this way.
+See the [reference](/tool-fmt/reference/) for the types involved and the
+[explanation](/tool-fmt/explanation/) for why the crate is shaped this way.

@@ -1,4 +1,4 @@
-# engine-fmt
+# tool-fmt
 
 Data-driven AST formatter: renders an `Ast` back to surface syntax using only
 language data (`grammar` rows, `tokens`, `ast` shapes) — no hardcoded kind
@@ -10,7 +10,7 @@ from the original source to keep comments and layout.
 
 ```rust
 use handl_language::Language;
-use hnl_engine_fmt::{FormatEngine, FormatOptions};
+use hnl_tool_fmt::{FormatEngine, FormatOptions};
 
 let lang = Language::new();               // your assembled language
 let engine = FormatEngine::new(FormatOptions::default());
@@ -33,4 +33,4 @@ MIT.
 
 ## Documentation
 
-<https://handl-lang.github.io/docs/engine-fmt/>
+<https://handl-lang.github.io/docs/tool-fmt/>

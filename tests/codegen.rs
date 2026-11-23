@@ -14,15 +14,15 @@ use std::sync::Arc;
 
 use handl_language::{Language, LexerPattern, LexerRuleDef, LiteralKind, TokenKindDef};
 use handl_plugin_codegen::CodegenRequest;
-use hnl_engine_codegen::{
+use hnl_tool_codegen::{
     ArtifactRef, ArtifactStore, Change, EmitContext, Emitter, Engine, IrModule, MemoryStore,
     PlanAction, Source,
 };
-use hnl_engine_fmt::{
+use hnl_tool_fmt::{
     FMT_EMITTER_NAME, FMT_IR_KIND, FMT_SOURCE_NAME, FmtEmitter, FmtModule, FmtSource,
     FormatOptions, TokenFormatter, canonical_post_process, register,
 };
-use hnl_engine_lex_pattern::lex;
+use hnl_tool_lex_pattern::lex;
 
 /// A minimal language with just enough token kinds / lexer rules for the
 /// formatter pipeline: newline (layout), `--` line comments, identifiers,
@@ -448,7 +448,7 @@ fn fmt_source_output_root_itself_is_stripped() {
 fn fmt_source_requires_spec_path() {
     let source = FmtSource::new(lang().clone());
     let err = source.parse(&EmitContext::new()).unwrap_err();
-    assert!(matches!(err, hnl_engine_codegen::CodegenError::Parse(_)));
+    assert!(matches!(err, hnl_tool_codegen::CodegenError::Parse(_)));
 }
 
 #[test]
@@ -457,7 +457,7 @@ fn fmt_source_missing_file_is_parse_error() {
     let spec = dir.path().join("nope.hnl");
     let source = FmtSource::new(lang().clone());
     let err = source.parse(&ctx_for(&spec, dir.path())).unwrap_err();
-    assert!(matches!(err, hnl_engine_codegen::CodegenError::Parse(_)));
+    assert!(matches!(err, hnl_tool_codegen::CodegenError::Parse(_)));
 }
 
 #[test]
@@ -467,7 +467,7 @@ fn fmt_source_unlexable_source_is_parse_error() {
     let spec = write_spec(dir.path(), "bad.hnl", "x @ 1\n");
     let source = FmtSource::new(lang().clone());
     let err = source.parse(&ctx_for(&spec, dir.path())).unwrap_err();
-    assert!(matches!(err, hnl_engine_codegen::CodegenError::Parse(_)));
+    assert!(matches!(err, hnl_tool_codegen::CodegenError::Parse(_)));
 }
 
 #[test]
@@ -479,7 +479,7 @@ fn fmt_source_absolute_spec_outside_store_root_is_parse_error() {
     let source = FmtSource::new(lang().clone());
     let err = source.parse(&ctx_for(&spec, dir.path())).unwrap_err();
     match err {
-        hnl_engine_codegen::CodegenError::Parse(msg) => {
+        hnl_tool_codegen::CodegenError::Parse(msg) => {
             assert!(msg.contains("not under the store root"), "{msg}");
         }
         other_err => panic!("expected Parse error, got {other_err}"),

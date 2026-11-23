@@ -18,7 +18,7 @@
 //!
 //! [`FmtModule`] deliberately carries **already-lexed** tokens:
 //! [`FmtSource`] (the kernel [`Source`] impl) owns the stage-1 lex —
-//! read file → `hnl_engine_lex_pattern::lex` → token stream — while
+//! read file → `hnl_tool_lex_pattern::lex` → token stream — while
 //! [`FmtEmitter`]/[`FmtModule::formatted`] stay a pure render: tokens in
 //! → canonical text out, no fallible front-end. This keeps
 //! `materialize` side-effect-free and preserves the ADR-0095 stage
@@ -54,7 +54,7 @@
 //!
 //! # Registry surface
 //!
-//! [`register`] mirrors the `engine-codegen-*` backend convention
+//! [`register`] mirrors the `tool-codegen-*` backend convention
 //! (ADR-0128 §0.1, PL-004): it seats source id `"fmt"`, emitter id
 //! `"fmt"`, and target record `"fmt"` on a
 //! [`handl_plugin_codegen::CodegenRegistry`], so `hnl fmt` can run the
@@ -69,7 +69,7 @@ use handl_plugin_codegen::{
     AnyEmitter, AnySource, CodegenEmitterDef, CodegenRegistry, CodegenRequest, CodegenSourceDef,
     CodegenTarget, erase_emitter, erase_source,
 };
-use hnl_engine_codegen::{
+use hnl_tool_codegen::{
     ArtifactRef, Change, CodegenError, EmitContext, Emitter, IrKind, IrModule, Source,
 };
 
@@ -268,7 +268,7 @@ impl Source<FmtModule> for FmtSource {
         })?;
         let source = std::fs::read_to_string(spec)
             .map_err(|e| CodegenError::Parse(format!("failed to read {}: {e}", spec.display())))?;
-        let tokens = hnl_engine_lex_pattern::lex(&self.lang, &source)
+        let tokens = hnl_tool_lex_pattern::lex(&self.lang, &source)
             .map_err(|e| CodegenError::Parse(format!("lex error in {}: {e}", spec.display())))?;
         let artifact = artifact_ref(spec, req.output_dir.as_deref())?;
         Ok(FmtModule::new(artifact, source, tokens, self.lang.clone()))
@@ -324,14 +324,14 @@ fn checked_ref(path: &str) -> Result<ArtifactRef, CodegenError> {
     if artifact.is_reserved() {
         return Err(CodegenError::Parse(format!(
             "fmt artifact ref {path:?} is under the reserved {} prefix",
-            hnl_engine_codegen::RESERVED_PREFIX
+            hnl_tool_codegen::RESERVED_PREFIX
         )));
     }
     Ok(artifact)
 }
 
 /// Register the `fmt` source/emitter/target triple on `reg` — the same
-/// link-time convention the `engine-codegen-*` backends use
+/// link-time convention the `tool-codegen-*` backends use
 /// (ADR-0128 §0.1, PL-004 T-090):
 ///
 /// - source `"fmt"` — [`FmtSource`]: `spec_path` file → lexed

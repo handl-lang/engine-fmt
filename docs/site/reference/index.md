@@ -9,7 +9,7 @@ the `engine-*` contract for this slot exposes.
 
 | crate | role |
 |---|---|
-| `hnl-engine-fmt` | tool |
+| `hnl-tool-fmt` | tool |
 
 ## Build and test
 

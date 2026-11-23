@@ -1,31 +1,31 @@
 [package]
-name = "hnl-engine-fmt"
+name = "hnl-tool-fmt"
 version = "0.1.0"
 edition = "2024"
 description = "Data-driven AST formatter engine (ADR-0044 \"language as data\")."
 license = "MIT"
-repository = "https://github.com/handl-lang/engine-fmt"
-homepage = "https://handl-lang.github.io/docs/engine-fmt/"
-documentation = "https://handl-lang.github.io/docs/engine-fmt/reference/"
+repository = "https://github.com/handl-lang/tool-fmt"
+homepage = "https://handl-lang.github.io/docs/tool-fmt/"
+documentation = "https://handl-lang.github.io/docs/tool-fmt/reference/"
 readme = "README.md"
 keywords = ["handl", "engine", "formatter", "language-as-data"]
 categories = ["development-tools", "compilers"]
-# Git-install only: https://github.com/handl-lang/engine-fmt (no crates.io).
+# Git-install only: https://github.com/handl-lang/tool-fmt (no crates.io).
 publish = false
 
 [dependencies]
 handl-language = { git = "https://github.com/handl-lang/kernel", branch = "main" }
-hnl-engine-codegen = { git = "https://github.com/handl-lang/engine-codegen", branch = "main" }
+hnl-tool-codegen = { git = "https://github.com/handl-lang/tool-codegen", branch = "main" }
 # PL-004 T-090: the registry-facing `register()` surface types live in
 # `handl-plugin-codegen` (the codegen port, host repo — same convention
-# as the `engine-codegen-*` backend crates; the `[patch]` below resolves
+# as the `tool-codegen-*` backend crates; the `[patch]` below resolves
 # it from the sibling `../host` checkout).
 handl-plugin-codegen = { git = "https://github.com/handl-lang/host", branch = "main" }
 # Stage-1 lex for `FmtSource::parse` — the same data-driven lexer
 # `plugin-ext-fmt` and the `fmt` target share (ADR-0095: lex is reused
 # by the surface, never duplicated). Render (`FmtModule::formatted` /
 # `FmtEmitter`) stays lex-free.
-hnl-engine-lex-pattern = { git = "https://github.com/handl-lang/engine-lex-pattern", branch = "main" }
+hnl-tool-lex-pattern = { git = "https://github.com/handl-lang/tool-lex-pattern", branch = "main" }
 serde_json = "1"
 
 [dev-dependencies]
@@ -33,9 +33,9 @@ serde_json = "1"
 tempfile = "3"
 
 # Local sibling resolution for the git deps above — mirrors the
-# `engine-codegen-*` backend crates' patch blocks.
-[patch."https://github.com/handl-lang/engine-codegen"]
-hnl-engine-codegen = { path = "../engine-codegen" }
+# `tool-codegen-*` backend crates' patch blocks.
+[patch."https://github.com/handl-lang/tool-codegen"]
+hnl-tool-codegen = { path = "../tool-codegen" }
 
 [patch."https://github.com/handl-lang/engine"]
 hnl-engine = { path = "../engine" }
@@ -49,5 +49,5 @@ handl-language = { path = "../kernel/crates/handl-language" }
 handl-value = { path = "../kernel/crates/handl-value" }
 handl-plugin-module = { path = "../host/crates/plugin-module" }
 
-[patch."https://github.com/handl-lang/engine-lex-pattern"]
-hnl-engine-lex-pattern = { path = "../engine-lex-pattern" }
+[patch."https://github.com/handl-lang/tool-lex-pattern"]
+hnl-tool-lex-pattern = { path = "../tool-lex-pattern" }
