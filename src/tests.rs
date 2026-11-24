@@ -859,8 +859,8 @@ fn post_process_individual_rules() {
     assert_eq!(collapse.apply("a\n\n\nb"), "a\n\nb");
     let groups = BlankLineBetweenDeclGroupsRule;
     assert_eq!(
-        groups.apply("import a from \"x\"\nmain :: f"),
-        "import a from \"x\"\n\nmain :: f"
+        groups.apply("import a from \"x\"\nmain := f"),
+        "import a from \"x\"\n\nmain := f"
     );
     assert_eq!(
         groups.apply("import a from \"x\"\nimport b from \"y\""),
@@ -895,7 +895,7 @@ fn post_process_individual_rules() {
 
 #[test]
 fn canonical_post_process_full_chain() {
-    let out = canonical_post_process("import sort from \"c\"   \nmain :: f([1])   \n\n");
-    assert_eq!(out, "import sort from \"c\"\n\nmain :: f([1])\n");
+    let out = canonical_post_process("import sort from \"c\"   \nmain := f([1])   \n\n");
+    assert_eq!(out, "import sort from \"c\"\n\nmain := f([1])\n");
     assert_eq!(canonical_post_process(""), "");
 }

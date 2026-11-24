@@ -537,9 +537,10 @@ fn decl_type(line: &str) -> Option<DeclType> {
     {
         return Some(DeclType::Export);
     }
-    // Binding: `identifier ::` or `identifier :=` at the start of the line (indent 0).
+    // Binding: `identifier :=` at the start of the line (indent 0) — `:=`
+    // is the only binding operator (`=`/`==` are equality, `::` is gone).
     if !line.starts_with(' ') && !line.starts_with('\t') {
-        let bind_pos = trimmed.find("::").or_else(|| trimmed.find(":="));
+        let bind_pos = trimmed.find(":=");
         if let Some(bind_pos) = bind_pos {
             let name = trimmed[..bind_pos].trim();
             // The name must be a simple identifier (all word chars).
